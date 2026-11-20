@@ -1,0 +1,1997 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ПОВЕРХНОСТИ — Студия премиальной поклейки обоев</title>
+<meta name="description" content="Поклейка обоев премиум-класса в Москве и области. Флизелин, винил, фотообои, фрески, текстиль. Гарантия 5 лет.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;800;900&display=swap">
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.13/dist/lenis.min.js"></script>
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.183/build/three.module.js" } }
+</script>
+
+<style>
+:root {
+  --void-black: #050508;
+  --void-dark: #0A0A0F;
+  --void-card: #0E0E14;
+  --neon-cyan: #00D4FF;
+  --neon-blue: #4D9FFF;
+  --neon-soft: #9DC4FF;
+  --ink-soft: rgba(255,255,255,0.7);
+  --ink-mute: rgba(255,255,255,0.5);
+  --ink-faint: rgba(255,255,255,0.3);
+  --hair: rgba(255,255,255,0.08);
+  --hair-mid: rgba(255,255,255,0.12);
+  --hair-strong: rgba(255,255,255,0.2);
+  --ease-quiet: cubic-bezier(.22, 1, .36, 1);
+  --ease-precise: cubic-bezier(.4, 0, .2, 1);
+  --ease-emphasis: cubic-bezier(.16, 1, .3, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { background: var(--void-black); }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--void-black);
+  color: #fff;
+  overflow-x: hidden;
+  cursor: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+a { color: inherit; text-decoration: none; cursor: none; }
+button { font-family: inherit; cursor: none; background: none; border: none; color: inherit; }
+input, select, textarea { font-family: inherit; cursor: none; }
+::selection { background: var(--neon-cyan); color: var(--void-black); }
+
+/* Custom cursor */
+#custom-cursor {
+  position: fixed; top: 0; left: 0;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  mix-blend-mode: difference;
+  pointer-events: none;
+  z-index: 9999;
+  will-change: transform;
+  transition: width .3s var(--ease-quiet), height .3s var(--ease-quiet), opacity .3s var(--ease-quiet);
+}
+#custom-cursor.hover { width: 48px; height: 48px; opacity: 0.5; }
+
+@media (hover: none), (pointer: coarse) {
+  body, a, button, input, select, textarea { cursor: auto; }
+  #custom-cursor { display: none !important; }
+}
+
+/* Particle canvas */
+#particle-canvas {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+main { position: relative; z-index: 2; }
+section { position: relative; }
+.container { max-width: 1400px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 2; }
+.container-narrow { max-width: 920px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 2; }
+
+.section-label {
+  font: 400 11px/1 'JetBrains Mono', monospace;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  display: inline-flex; align-items: center; gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.section-label::before {
+  content: ''; display: inline-block;
+  width: 24px; height: 1px;
+  background: var(--neon-cyan);
+}
+
+/* Top nav */
+#topnav {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 1.1rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  background: rgba(5,5,8,0.6);
+  border-bottom: 1px solid var(--hair);
+}
+#topnav .logo {
+  font: 700 13px 'JetBrains Mono', monospace;
+  letter-spacing: 0.15em;
+  color: #fff;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.logo-dot {
+  width: 8px; height: 8px;
+  background: var(--neon-cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--neon-cyan);
+}
+#topnav .nav-links {
+  display: flex; gap: 2.25rem;
+  list-style: none;
+}
+#topnav .nav-links a {
+  font: 400 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  position: relative;
+  padding: 0.5rem 0;
+  transition: color 0.3s var(--ease-quiet);
+}
+#topnav .nav-links a::after {
+  content: ''; position: absolute; left: 0; bottom: 0;
+  width: 0; height: 1px;
+  background: var(--neon-cyan);
+  transition: width 0.4s var(--ease-quiet);
+}
+#topnav .nav-links a:hover, #topnav .nav-links a.active { color: #fff; }
+#topnav .nav-links a:hover::after, #topnav .nav-links a.active::after { width: 100%; }
+
+#topnav .nav-cta {
+  font: 400 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.7rem 1.2rem;
+  border: 1px solid var(--neon-cyan);
+  color: var(--neon-cyan);
+  background: transparent;
+  transition: background 0.3s var(--ease-quiet), color 0.3s var(--ease-quiet);
+}
+#topnav .nav-cta:hover { background: var(--neon-cyan); color: var(--void-black); }
+
+@media (max-width: 920px) { #topnav .nav-links { display: none; } }
+
+/* Hero */
+#hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 8rem 2rem 4rem;
+  position: relative;
+  z-index: 3;
+}
+.hero-label {
+  font: 400 11px/1 'JetBrains Mono', monospace;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  margin-bottom: 2.5rem;
+  display: flex; align-items: center; gap: 1rem;
+}
+.hero-label::before { content: ''; width: 32px; height: 1px; background: var(--neon-cyan); }
+
+#hero-title {
+  font: 700 clamp(2rem, 8.5vw, 7.5rem)/0.95 'JetBrains Mono', monospace;
+  letter-spacing: -0.04em;
+  color: #fff;
+  margin-bottom: 2rem;
+  word-break: break-word;
+}
+#hero-title.is-decoding {
+  text-shadow: 0 0 20px rgba(0,212,255,0.5), 0 0 40px rgba(0,212,255,0.2);
+}
+
+.hero-sub {
+  font: 400 clamp(1rem, 1.3vw, 1.2rem)/1.55 'Inter', sans-serif;
+  color: var(--ink-soft);
+  max-width: 640px;
+  margin-bottom: 3rem;
+}
+
+.hero-cta-row {
+  display: flex; gap: 1.25rem; flex-wrap: wrap;
+  margin-bottom: 5rem;
+}
+
+.btn {
+  font: 400 12px 'JetBrains Mono', monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 1rem 1.6rem;
+  border: 1px solid var(--hair-strong);
+  background: transparent;
+  color: #fff;
+  transition: border-color 0.3s var(--ease-quiet), background 0.3s var(--ease-quiet), color 0.3s var(--ease-quiet);
+  display: inline-flex; align-items: center; gap: 0.5rem;
+}
+.btn:hover { border-color: var(--neon-cyan); }
+.btn.primary {
+  background: var(--neon-cyan);
+  color: var(--void-black);
+  border-color: var(--neon-cyan);
+}
+.btn.primary:hover { background: #fff; border-color: #fff; }
+.btn .arrow {
+  display: inline-block;
+  transition: transform 0.3s var(--ease-quiet);
+}
+.btn:hover .arrow { transform: translateX(4px); }
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+  border-top: 1px solid var(--hair-mid);
+  padding-top: 2rem;
+}
+.hero-stat .num {
+  font: 700 clamp(1.75rem, 4vw, 3.25rem)/1 'JetBrains Mono', monospace;
+  letter-spacing: -0.04em;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+.hero-stat .num .unit { color: var(--neon-cyan); font-size: 0.55em; margin-left: 0.25rem; }
+.hero-stat .label {
+  font: 400 10px 'JetBrains Mono', monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+@media (max-width: 720px) { .hero-stats { grid-template-columns: repeat(2, 1fr); } }
+
+.hero-scroll {
+  position: absolute; bottom: 2rem; left: 2rem;
+  font: 400 10px 'JetBrains Mono', monospace;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.hero-scroll::after {
+  content: ''; width: 1px; height: 32px;
+  background: linear-gradient(to bottom, var(--neon-cyan), transparent);
+  animation: scroll-pulse 2s var(--ease-quiet) infinite;
+}
+@keyframes scroll-pulse {
+  0%, 100% { opacity: 0.3; transform: scaleY(0.7); }
+  50% { opacity: 1; transform: scaleY(1); }
+}
+
+/* Vortex section */
+#vortex-section {
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+#vortex-canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  z-index: 1;
+}
+.vortex-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 5rem 2rem 3rem;
+  pointer-events: none;
+  z-index: 2;
+}
+.vortex-overlay > div {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  gap: 2rem; flex-wrap: wrap;
+}
+.vortex-overlay h2 {
+  font: 800 clamp(1.4rem, 2.6vw, 2.2rem)/1.15 'Inter', sans-serif;
+  letter-spacing: -0.02em;
+  max-width: 540px;
+}
+.vortex-hint {
+  font: 400 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.vortex-vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(5,5,8,0.6) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Manifesto */
+#manifesto {
+  padding: 12rem 2rem;
+}
+#manifesto .text {
+  font: 400 clamp(1.4rem, 2.8vw, 2.25rem)/1.4 'Inter', sans-serif;
+  letter-spacing: -0.01em;
+  color: #fff;
+  margin-top: 2.5rem;
+}
+#manifesto .text .word {
+  display: inline-block;
+  opacity: 0;
+  filter: blur(12px) brightness(30%);
+  will-change: filter, opacity;
+}
+
+/* Section header */
+.section-header {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 4rem;
+  margin-bottom: 5rem;
+  align-items: end;
+}
+.section-header h2 {
+  font: 900 clamp(2.25rem, 5.5vw, 4.75rem)/0.95 'Inter', sans-serif;
+  letter-spacing: -0.03em;
+}
+.section-header .lede {
+  font: 400 1rem/1.6 'Inter', sans-serif;
+  color: var(--ink-soft);
+  max-width: 480px;
+}
+@media (max-width: 880px) {
+  .section-header { grid-template-columns: 1fr; gap: 1.5rem; }
+}
+
+/* Services */
+#services {
+  padding: 8rem 2rem;
+  border-top: 1px solid var(--hair-mid);
+}
+.service-row {
+  display: grid;
+  grid-template-columns: 50px 1.2fr 2fr 180px;
+  gap: 2rem;
+  padding: 2.25rem 0;
+  border-top: 1px solid var(--hair-mid);
+  position: relative;
+  align-items: center;
+  transition: padding 0.5s var(--ease-quiet);
+}
+.service-row:last-child { border-bottom: 1px solid var(--hair-mid); }
+.service-row::before {
+  content: ''; position: absolute;
+  left: 0; top: 0;
+  width: 2px; height: 0;
+  background: var(--neon-cyan);
+  transition: height 0.6s var(--ease-quiet);
+}
+.service-row:hover::before { height: 100%; }
+.service-row:hover { padding-left: 1.5rem; }
+.service-row .num {
+  font: 400 13px 'JetBrains Mono', monospace;
+  color: var(--ink-faint);
+}
+.service-row h3 {
+  font: 800 1.4rem/1.2 'Inter', sans-serif;
+  letter-spacing: -0.02em;
+  transition: color 0.4s var(--ease-quiet);
+}
+.service-row:hover h3 { color: var(--neon-cyan); }
+.service-row p {
+  font: 400 0.92rem/1.55 'Inter', sans-serif;
+  color: var(--ink-mute);
+  transition: color 0.4s var(--ease-quiet);
+}
+.service-row:hover p { color: var(--ink-soft); }
+.service-row .price {
+  font: 400 14px 'JetBrains Mono', monospace;
+  text-align: right;
+}
+.service-row .price .val {
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+.service-row .price .unit {
+  color: var(--ink-mute);
+  font-size: 0.8em;
+  display: block;
+  margin-top: 0.15rem;
+}
+.service-row .order-btn {
+  margin-top: 0.75rem;
+  font: 400 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  padding: 0;
+  transition: color 0.3s var(--ease-quiet);
+}
+.service-row:hover .order-btn { color: var(--neon-cyan); }
+
+@media (max-width: 880px) {
+  .service-row {
+    grid-template-columns: 40px 1fr;
+    gap: 1rem;
+  }
+  .service-row p, .service-row .price { grid-column: 2; }
+  .service-row .price { text-align: left; margin-top: 0.5rem; }
+}
+
+/* Gallery */
+#gallery {
+  padding: 8rem 0;
+  overflow: hidden;
+  border-top: 1px solid var(--hair-mid);
+}
+.gallery-header { padding: 0 2rem; margin-bottom: 4rem; }
+.parallax-strips {
+  display: flex; flex-direction: column;
+  gap: 1.25rem;
+}
+.parallax-row {
+  display: flex;
+  gap: 1.25rem;
+  will-change: transform;
+}
+.parallax-row--bottom { transform: translateX(-150px); }
+.parallax-item {
+  width: 340px; height: 230px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  background: var(--void-card);
+}
+.parallax-item img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform 0.7s var(--ease-quiet), filter 0.5s var(--ease-quiet);
+  filter: grayscale(35%) brightness(0.82);
+}
+.parallax-item:hover img {
+  transform: scale(1.06);
+  filter: grayscale(0%) brightness(1);
+}
+.parallax-item .meta {
+  position: absolute;
+  bottom: 1rem; left: 1rem;
+  font: 400 10px 'JetBrains Mono', monospace;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(5,5,8,0.75);
+  padding: 0.4rem 0.65rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Process */
+#process {
+  padding: 8rem 2rem;
+  border-top: 1px solid var(--hair-mid);
+}
+.process-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+}
+.process-step {
+  padding: 2rem 1.4rem;
+  border: 1px solid var(--hair-mid);
+  background: var(--void-dark);
+  position: relative;
+  transition: border-color 0.4s var(--ease-quiet), background 0.4s var(--ease-quiet);
+}
+.process-step:hover {
+  border-color: var(--neon-cyan);
+  background: rgba(0,212,255,0.05);
+}
+.process-step .step-num {
+  font: 700 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.2em;
+  color: var(--neon-cyan);
+  margin-bottom: 1.5rem;
+}
+.process-step h3 {
+  font: 800 1.1rem/1.2 'Inter', sans-serif;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.65rem;
+}
+.process-step p {
+  font: 400 0.85rem/1.55 'Inter', sans-serif;
+  color: var(--ink-mute);
+}
+.process-step .duration {
+  margin-top: 1.25rem;
+  font: 400 10px 'JetBrains Mono', monospace;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+@media (max-width: 880px) { .process-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 540px) { .process-grid { grid-template-columns: 1fr; } }
+
+/* Calculator */
+#calculator {
+  padding: 8rem 2rem;
+  border-top: 1px solid var(--hair-mid);
+  background: linear-gradient(180deg, transparent, rgba(0,212,255,0.03));
+}
+.calc-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 3.5rem;
+}
+.calc-field { margin-bottom: 2rem; }
+.calc-form label.field-label {
+  display: block;
+  font: 400 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin-bottom: 0.75rem;
+}
+.radio-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.65rem;
+}
+.radio-card {
+  position: relative;
+  display: block;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--hair-mid);
+  background: var(--void-dark);
+  transition: border-color 0.3s var(--ease-quiet), background 0.3s var(--ease-quiet);
+}
+.radio-card:hover { border-color: var(--hair-strong); }
+.radio-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.radio-card:has(input:checked) {
+  border-color: var(--neon-cyan);
+  background: rgba(0,212,255,0.08);
+}
+.radio-card:has(input:checked) .card-name { color: var(--neon-cyan); }
+.radio-card:has(input:checked) .card-price { color: var(--neon-soft); }
+.card-name {
+  font: 700 13px 'Inter', sans-serif;
+  margin-bottom: 0.25rem;
+  transition: color 0.3s var(--ease-quiet);
+}
+.card-price {
+  font: 400 11px 'JetBrains Mono', monospace;
+  color: var(--ink-mute);
+  transition: color 0.3s var(--ease-quiet);
+}
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+input[type="text"], input[type="number"], input[type="tel"], input[type="email"], select, textarea {
+  width: 100%;
+  background: var(--void-dark);
+  border: 1px solid var(--hair-mid);
+  color: #fff;
+  padding: 0.85rem 1rem;
+  font: 400 14px 'Inter', sans-serif;
+  transition: border-color 0.3s var(--ease-quiet);
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--neon-cyan);
+}
+textarea { min-height: 120px; resize: vertical; }
+
+.checkbox-group {
+  display: flex; flex-direction: column;
+  gap: 0.65rem;
+}
+.check-row {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--hair-mid);
+  background: var(--void-dark);
+  transition: border-color 0.3s var(--ease-quiet);
+}
+.check-row:hover { border-color: var(--hair-strong); }
+.check-row input {
+  width: 16px; height: 16px;
+  accent-color: var(--neon-cyan);
+}
+.check-row label {
+  margin: 0;
+  font: 400 13px 'Inter', sans-serif;
+  color: var(--ink-soft);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.calc-actions {
+  display: flex; gap: 1rem; flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+.calc-result {
+  position: sticky;
+  top: 110px;
+  padding: 2rem;
+  border: 1px solid var(--hair-mid);
+  background: var(--void-dark);
+  align-self: start;
+}
+.calc-result h3 {
+  font: 400 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  margin-bottom: 1.5rem;
+}
+.result-row {
+  display: flex; justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--hair);
+  font: 400 14px 'Inter', sans-serif;
+  gap: 1rem;
+}
+.result-row .key { color: var(--ink-mute); }
+.result-row .val {
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+}
+.result-total {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 1.5rem 0 0.5rem;
+  margin-top: 1rem;
+  border-top: 1px solid var(--hair-mid);
+}
+.result-total .key {
+  font: 400 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.result-total .val {
+  font: 700 1.85rem 'JetBrains Mono', monospace;
+  color: var(--neon-cyan);
+  letter-spacing: -0.02em;
+}
+.result-empty {
+  text-align: center;
+  padding: 2rem 0;
+  color: var(--ink-faint);
+  font: 400 13px 'Inter', sans-serif;
+  line-height: 1.5;
+}
+.result-cta {
+  margin-top: 1.5rem;
+  width: 100%;
+  justify-content: center;
+}
+@media (max-width: 880px) {
+  .calc-grid { grid-template-columns: 1fr; }
+  .calc-result { position: static; }
+}
+
+/* Contact */
+#contact {
+  padding: 8rem 2rem;
+  border-top: 1px solid var(--hair-mid);
+}
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 4rem;
+}
+.contact-info .info-block { margin-bottom: 2.25rem; }
+.info-label {
+  font: 400 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin-bottom: 0.5rem;
+}
+.info-value {
+  font: 400 1.15rem/1.5 'Inter', sans-serif;
+  color: #fff;
+}
+.info-value a:hover { color: var(--neon-cyan); }
+
+.contact-form .form-row { margin-bottom: 1.5rem; }
+.contact-form .form-row.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+.contact-form label {
+  display: block;
+  font: 400 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin-bottom: 0.5rem;
+}
+.form-error {
+  font: 400 11px 'JetBrains Mono', monospace;
+  color: #ff6b6b;
+  margin-top: 0.4rem;
+  min-height: 1em;
+}
+.form-actions {
+  display: flex; gap: 1rem;
+  margin-top: 1.5rem;
+}
+.privacy {
+  margin-top: 1rem;
+  font: 400 11px 'Inter', sans-serif;
+  color: var(--ink-faint);
+  line-height: 1.5;
+}
+@media (max-width: 880px) {
+  .contact-grid { grid-template-columns: 1fr; }
+  .contact-form .form-row.two-col { grid-template-columns: 1fr; }
+}
+
+/* Footer */
+#footer {
+  padding: 5rem 2rem 2rem;
+  border-top: 1px solid var(--hair-mid);
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 3rem;
+  margin-bottom: 4rem;
+}
+.footer-grid h4 {
+  font: 400 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin-bottom: 1.25rem;
+}
+.footer-grid ul { list-style: none; }
+.footer-grid li { margin-bottom: 0.75rem; }
+.footer-grid li a {
+  font: 400 14px 'Inter', sans-serif;
+  color: var(--ink-soft);
+  transition: color 0.3s var(--ease-quiet);
+}
+.footer-grid li a:hover { color: var(--neon-cyan); }
+.logo-big {
+  font: 700 1.5rem 'JetBrains Mono', monospace;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin-bottom: 1rem;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.logo-big .dot {
+  width: 10px; height: 10px;
+  background: var(--neon-cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--neon-cyan);
+}
+.footer-brand p {
+  font: 400 0.9rem/1.6 'Inter', sans-serif;
+  color: var(--ink-mute);
+  max-width: 360px;
+}
+.footer-bottom {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 2rem;
+  border-top: 1px solid var(--hair-mid);
+  font: 400 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.15em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  flex-wrap: wrap; gap: 1rem;
+}
+.back-top {
+  font: 400 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.15em;
+  color: var(--ink-mute);
+  border: 1px solid var(--hair-mid);
+  padding: 0.65rem 1.25rem;
+  transition: border-color 0.3s var(--ease-quiet), color 0.3s var(--ease-quiet);
+}
+.back-top:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+@media (max-width: 880px) {
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .footer-bottom { flex-direction: column; align-items: flex-start; }
+}
+
+/* Lightbox */
+#lightbox {
+  position: fixed; inset: 0;
+  background: rgba(5,5,8,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 200;
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 4rem;
+}
+#lightbox.open { display: flex; }
+#lightbox img {
+  max-width: 85%;
+  max-height: 80vh;
+  object-fit: contain;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+}
+#lightbox .close {
+  position: absolute;
+  top: 2rem; right: 2rem;
+  font: 400 12px 'JetBrains Mono', monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #fff;
+  border: 1px solid var(--hair-strong);
+  padding: 0.65rem 1.25rem;
+}
+#lightbox .close:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+#lightbox .lb-meta {
+  position: absolute;
+  bottom: 2rem; left: 2rem;
+  font: 400 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+/* Toast */
+#toast-container {
+  position: fixed;
+  bottom: 2rem; right: 2rem;
+  z-index: 300;
+  display: flex; flex-direction: column;
+  gap: 0.75rem;
+  pointer-events: none;
+  max-width: 360px;
+}
+.toast {
+  background: var(--void-dark);
+  border: 1px solid var(--hair-strong);
+  border-left: 3px solid var(--neon-cyan);
+  padding: 1rem 1.25rem;
+  font: 400 13px 'Inter', sans-serif;
+  color: #fff;
+  min-width: 280px;
+  transform: translateX(120%);
+  animation: toast-in 0.4s var(--ease-quiet) forwards;
+}
+.toast.warn { border-left-color: #ffb347; }
+.toast.error { border-left-color: #ff6b6b; }
+.toast.out { animation: toast-out 0.4s var(--ease-quiet) forwards; }
+@keyframes toast-in { to { transform: translateX(0); } }
+@keyframes toast-out { to { transform: translateX(120%); opacity: 0; } }
+.toast .toast-title {
+  font: 400 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  margin-bottom: 0.25rem;
+}
+.toast.warn .toast-title { color: #ffb347; }
+.toast.error .toast-title { color: #ff6b6b; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  #particle-canvas, #vortex-canvas { display: none; }
+  #manifesto .text .word { opacity: 1 !important; filter: none !important; }
+}
+
+.fade-up {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 1s var(--ease-quiet), transform 1s var(--ease-quiet);
+}
+.fade-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+</style>
+</head>
+<body>
+
+<div id="custom-cursor"></div>
+<canvas id="particle-canvas"></canvas>
+
+<nav id="topnav">
+  <a href="#hero" class="logo" data-scroll="#hero"><span class="logo-dot"></span>ПОВЕРХНОСТИ·STUDIO</a>
+  <ul class="nav-links">
+    <li><a href="#vortex-section" data-nav>Работы</a></li>
+    <li><a href="#services" data-nav>Услуги</a></li>
+    <li><a href="#gallery" data-nav>Портфолио</a></li>
+    <li><a href="#process" data-nav>Процесс</a></li>
+    <li><a href="#calculator" data-nav>Калькулятор</a></li>
+    <li><a href="#contact" data-nav>Контакты</a></li>
+  </ul>
+  <button class="nav-cta" data-scroll="#contact">+7 495 000 00 00</button>
+</nav>
+
+<main>
+
+<section id="hero">
+  <div class="container">
+    <div class="hero-label">Студия поверхностей · Москва · с 2014</div>
+    <h1 id="hero-title">ПОВЕРХНОСТИ·ПРЕМИУМ·ОБОИ</h1>
+    <p class="hero-sub">Поклейка обоев премиум-класса в Москве и области. Флизелин, винил, фотообои, фрески, текстиль. Бесшовные стыки, подгонка раппорта до миллиметра, гарантия пять лет на работу и материал.</p>
+    <div class="hero-cta-row">
+      <button class="btn primary" data-scroll="#calculator">Рассчитать стоимость<span class="arrow">→</span></button>
+      <button class="btn" data-scroll="#gallery">Смотреть работы<span class="arrow">↓</span></button>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="num">10<span class="unit">лет</span></div>
+        <div class="label">На рынке</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">1240<span class="unit">+</span></div>
+        <div class="label">Завершённых проектов</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">5<span class="unit">лет</span></div>
+        <div class="label">Гарантия на работу</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">0.5<span class="unit">мм</span></div>
+        <div class="label">Допуск на стык</div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-scroll">Прокрутите вниз</div>
+</section>
+
+<section id="vortex-section">
+  <canvas id="vortex-canvas"></canvas>
+  <div class="vortex-vignette"></div>
+  <div class="vortex-overlay">
+    <div>
+      <div class="section-label" style="margin: 0;">Каталог поверхностей / 120 образцов</div>
+      <div class="vortex-hint">Прокрутите ↓</div>
+    </div>
+    <div>
+      <h2>Каждый рулон — отдельный характер. Мы знаем поведение 120+ коллекций, с которыми работаем.</h2>
+      <div class="vortex-hint">— Филипп Розье, главный технолог</div>
+    </div>
+  </div>
+</section>
+
+<section id="manifesto">
+  <div class="container-narrow">
+    <div class="section-label">Манифест</div>
+    <p class="text" id="manifesto-text">Поверхность — это не фон. Это первое, на что падает взгляд, когда дверь открывается. Это то, как комната дышит утром и как она молчит вечером. Мы клеим обои так, как стеклодувы выдували венецианское стекло — медленно, с уважением к материалу, с допуском в полмиллиметра. Стык невидим. Рисунок совпадает. Пузырь воздуха — это брак, а не случайность.</p>
+  </div>
+</section>
+
+<section id="services">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <div class="section-label">Услуги</div>
+        <h2>Что мы клеим</h2>
+      </div>
+      <p class="lede">Шесть направлений работ — от демонтажа старых покрытий до поклейки дизайнерских фресок ручной работы. Каждый мастер сертифицирован по конкретному типу материала.</p>
+    </div>
+
+    <div class="services-list">
+      <div class="service-row">
+        <div class="num">01</div>
+        <h3>Флизелиновые обои</h3>
+        <p>Стандарт премиум-сегмента. Подходят для гостиных, спален, коридоров. Стык невидим, можно красить до семи раз.</p>
+        <div class="price">
+          <div class="val">350 ₽</div>
+          <div class="unit">/ м²</div>
+          <button class="order-btn" data-scroll="#contact">Заказать →</button>
+        </div>
+      </div>
+      <div class="service-row">
+        <div class="num">02</div>
+        <h3>Виниловые обои</h3>
+        <p>Влагостойкое покрытие для кухонь и детских. Моющийся слой, устойчивость к ультрафиолету, срок службы 15+ лет.</p>
+        <div class="price">
+          <div class="val">450 ₽</div>
+          <div class="unit">/ м²</div>
+          <button class="order-btn" data-scroll="#contact">Заказать →</button>
+        </div>
+      </div>
+      <div class="service-row">
+        <div class="num">03</div>
+        <h3>Фотообои и фрески</h3>
+        <p>Печать по индивидуальному макету на холсте, флизелине или текстиле. Подгонка панорамного раппорта, бесшовная склейка.</p>
+        <div class="price">
+          <div class="val">800 ₽</div>
+          <div class="unit">/ м²</div>
+          <button class="order-btn" data-scroll="#contact">Заказать →</button>
+        </div>
+      </div>
+      <div class="service-row">
+        <div class="num">04</div>
+        <h3>Декоративные панели</h3>
+        <p>3D-панели, гибкий камень, пробка, ламинат. Монтаж с подсветкой и без, формирование ниш и акцентных стен.</p>
+        <div class="price">
+          <div class="val">1200 ₽</div>
+          <div class="unit">/ м²</div>
+          <button class="order-btn" data-scroll="#contact">Заказать →</button>
+        </div>
+      </div>
+      <div class="service-row">
+        <div class="num">05</div>
+        <h3>Подготовка стен</h3>
+        <p>Демонтаж, грунтовка, шпаклёвка, ошкуривание, разметка. Чистовая подготовка под обои премиум-класса.</p>
+        <div class="price">
+          <div class="val">200 ₽</div>
+          <div class="unit">/ м²</div>
+          <button class="order-btn" data-scroll="#contact">Заказать →</button>
+        </div>
+      </div>
+      <div class="service-row">
+        <div class="num">06</div>
+        <h3>Дизайн-сопровождение</h3>
+        <p>Выезд дизайнера с каталогом 120+ коллекций, подбор под освещение и интерьер, визуализация в 3D перед поклейкой.</p>
+        <div class="price">
+          <div class="val">Бесплатно</div>
+          <div class="unit">при заказе</div>
+          <button class="order-btn" data-scroll="#contact">Заказать →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="gallery">
+  <div class="gallery-header">
+    <div class="section-header">
+      <div>
+        <div class="section-label">Портфолио</div>
+        <h2>Недавние работы</h2>
+      </div>
+      <p class="lede">Двухлетний архив. Клик по фото открывает крупный план с метаданными: материал, помещение, площадь.</p>
+    </div>
+  </div>
+  <div class="parallax-strips">
+    <div class="parallax-row" id="parallax-top">
+      <div class="parallax-item" data-lightbox="https://picsum.photos/seed/wp-living-baroque/1200/800" data-meta="Барокко · гостиная · 38 м²"><img src="https://picsum.photos/seed/wp-living-baroque/720/480" alt=""><div class="meta">Барокко · гостиная · 38 м²</div></div>
+      <div class="parallax-item" data-lightbox="https://picsum.photos/seed/wp-bedroom-linen/1200/800" data-meta="Лён · спальня · 24 м²"><img src="https://picsum.photos/seed/wp-bedroom-linen/720/480" alt=""><div class="meta">Лён · спальня · 24 м²</div></div>
+      <div class="parallax-item" data-lightbox="https://picsum.photos/seed/wp-kitchen-vinyl/1200/800" data-meta="Винил · кухня · 18 м²"><img src="https://picsum.photos/seed/wp-kitchen-vinyl/720/480" alt=""><div class="meta">Винил · кухня · 18 м²</div></div>
+      <div class="parallax-item" data-lightbox="https://picsum.photos/seed/wp-corridor-geo/1200/800" data-meta="Геометрия · коридор · 12 м²"><img src="https://picsum.photos/seed/wp-corridor-geo/720/480" alt=""><div class="meta">Геометрия · коридор · 12 м²</div></div>
+      <div class="parallax-item" data-lightbox="https://picsum.photos/seed/wp-office-mural/1200/800" data-meta="Фреска · офис · 56 м²"><img src="https://picsum.photos/seed/wp-office-mural/720/480" alt=""><div class="meta">Фреска · офис · 56 м²</div></div>
+      <div class="parallax-item" data-lightbox="https://picsum.photos/seed/wp-nursery-clouds/1200/800" data-meta="Облака · детская · 22 м²"><img src="https://picsum.photos/seed/wp-nursery-clouds/720/480" alt=""><div class="meta">Облака · детская · 22 м²</div></div>
+    </div>
+    <div class="parallax-row parallax-row--bottom" id="parallax-bottom">
+      <div class="parallax-item" data-lightbox="https://picsum.photos/seed/wp-loft-brick/1200/800" data-meta="Кирпич · лофт · 64 м²"><img src="https://picsum.photos/seed/wp-loft-brick/720/480" alt=""><div class="meta">Кирпич · лофт · 64 м²</div></div>
+      <div class="parallax-item" data-lightbox="https://picsum.photos/seed/wp-classic-damask/1200/800" data-meta="Дамаск · кабинет · 28 м²"><img src="https://picsum.photos/seed/wp-classic-damask/720/480" alt=""><div class="meta">Дамаск · кабинет · 28 м²</div></div>
+      <div class="parallax-item" data-lightbox="https://picsum.photos/seed/wp-japanese-silk/1200/800" data-meta="Шёлк · гостиная · 42 м²"><img src="https://picsum.photos/seed/wp-japanese-silk/720/480" alt=""><div class="meta">Шёлк · гостиная · 42 м²</div></div>
+      <div class="parallax-item" data-lightbox="https://picsum.photos/seed/wp-scandi-stripes/1200/800" data-meta="Полосы · сканди · 36 м²"><img src="https://picsum.photos/seed/wp-scandi-stripes/720/480" alt=""><div class="meta">Полосы · сканди · 36 м²</div></div>
+      <div class="parallax-item" data-lightbox="https://picsum.photos/seed/wp-tropic-leaves/1200/800" data-meta="Листья · зимний сад · 48 м²"><img src="https://picsum.photos/seed/wp-tropic-leaves/720/480" alt=""><div class="meta">Листья · зимний сад · 48 м²</div></div>
+      <div class="parallax-item" data-lightbox="https://picsum.photos/seed/wp-pano-forest/1200/800" data-meta="Панорама · лес · 78 м²"><img src="https://picsum.photos/seed/wp-pano-forest/720/480" alt=""><div class="meta">Панорама · лес · 78 м²</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="process">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <div class="section-label">Процесс</div>
+        <h2>Как мы работаем</h2>
+      </div>
+      <p class="lede">Пять этапов от заявки до сдачи объекта. Каждый шаг задокументирован, фото до и после в акте приёмки.</p>
+    </div>
+    <div class="process-grid">
+      <div class="process-step">
+        <div class="step-num">/ 01</div>
+        <h3>Замер и консультация</h3>
+        <p>Выезд мастера на объект, замер стен, оценка состояния, подбор материала из каталога.</p>
+        <div class="duration">1–2 дня</div>
+      </div>
+      <div class="process-step">
+        <div class="step-num">/ 02</div>
+        <h3>Смета и договор</h3>
+        <p>Фиксированная смета с указанием материала, площади, стоимости работ. Договор с гарантией 5 лет.</p>
+        <div class="duration">1 день</div>
+      </div>
+      <div class="process-step">
+        <div class="step-num">/ 03</div>
+        <h3>Подготовка поверхности</h3>
+        <p>Демонтаж старого покрытия, шпаклёвка, грунтовка, финишная проверка лазерным уровнем.</p>
+        <div class="duration">2–4 дня</div>
+      </div>
+      <div class="process-step">
+        <div class="step-num">/ 04</div>
+        <h3>Поклейка</h3>
+        <p>Подгонка раппорта, нанесение клея, монтаж полотна, прикатка валиком, контроль стыков.</p>
+        <div class="duration">1–3 дня</div>
+      </div>
+      <div class="process-step">
+        <div class="step-num">/ 05</div>
+        <h3>Сдача объекта</h3>
+        <p>Финальная проверка с заказчиком, фотофиксация, подписание акта приёмки, выдача гарантии.</p>
+        <div class="duration">1 день</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="calculator">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <div class="section-label">Калькулятор</div>
+        <h2>Рассчитать стоимость</h2>
+      </div>
+      <p class="lede">Предварительный расчёт за 30 секунд. Финальная смета фиксируется после бесплатного выезда замерщика.</p>
+    </div>
+
+    <div class="calc-grid">
+      <div class="calc-form">
+        <div class="calc-field">
+          <label class="field-label">Тип обоев</label>
+          <div class="radio-group">
+            <label class="radio-card">
+              <input type="radio" name="wp-type" value="flizelin">
+              <div class="card-name">Флизелин</div>
+              <div class="card-price">350 ₽/м²</div>
+            </label>
+            <label class="radio-card">
+              <input type="radio" name="wp-type" value="vinyl">
+              <div class="card-name">Винил</div>
+              <div class="card-price">450 ₽/м²</div>
+            </label>
+            <label class="radio-card">
+              <input type="radio" name="wp-type" value="photo">
+              <div class="card-name">Фотообои</div>
+              <div class="card-price">800 ₽/м²</div>
+            </label>
+            <label class="radio-card">
+              <input type="radio" name="wp-type" value="freska">
+              <div class="card-name">Фреска</div>
+              <div class="card-price">1200 ₽/м²</div>
+            </label>
+            <label class="radio-card">
+              <input type="radio" name="wp-type" value="silk">
+              <div class="card-name">Текстиль</div>
+              <div class="card-price">950 ₽/м²</div>
+            </label>
+          </div>
+        </div>
+
+        <div class="calc-field">
+          <div class="input-row">
+            <div>
+              <label class="field-label">Площадь стен, м²</label>
+              <input type="number" id="calc-area" min="0" step="0.1" placeholder="например, 38.5">
+            </div>
+            <div>
+              <label class="field-label">Высота потолка, м</label>
+              <input type="number" id="calc-height" min="0" step="0.1" placeholder="например, 2.75">
+            </div>
+          </div>
+        </div>
+
+        <div class="calc-field">
+          <label class="field-label">Дополнительные работы</label>
+          <div class="checkbox-group">
+            <div class="check-row">
+              <input type="checkbox" id="calc-prep">
+              <label for="calc-prep">Подготовка стен — 200 ₽/м²</label>
+            </div>
+            <div class="check-row">
+              <input type="checkbox" id="calc-demo">
+              <label for="calc-demo">Демонтаж старых обоев — 100 ₽/м²</label>
+            </div>
+            <div class="check-row">
+              <input type="checkbox" id="calc-ceiling">
+              <label for="calc-ceiling">Поклейка на потолок — +250 ₽/м²</label>
+            </div>
+            <div class="check-row">
+              <input type="checkbox" id="calc-urgency">
+              <label for="calc-urgency">Срочный выезд (за 24 часа) — +15%</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="calc-actions">
+          <button class="btn primary" id="calc-calculate">Рассчитать<span class="arrow">→</span></button>
+          <button class="btn" id="calc-reset">Сбросить</button>
+        </div>
+      </div>
+
+      <div class="calc-result">
+        <h3>Предварительная смета</h3>
+        <div id="result-body">
+          <div class="result-empty">Заполните параметры слева — здесь появится детализированная смета.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <div class="section-label">Контакты</div>
+        <h2>Оставить заявку</h2>
+      </div>
+      <p class="lede">Перезвоним в течение двух часов в рабочее время. Замерщик приедет бесплатно в день обращения или на следующий день.</p>
+    </div>
+
+    <div class="contact-grid">
+      <div class="contact-info">
+        <div class="info-block">
+          <div class="info-label">Телефон</div>
+          <div class="info-value"><a href="tel:+74950000000">+7 495 000 00 00</a></div>
+        </div>
+        <div class="info-block">
+          <div class="info-label">Email</div>
+          <div class="info-value"><a href="mailto:hello@poverhnosti.studio">hello@poverhnosti.studio</a></div>
+        </div>
+        <div class="info-block">
+          <div class="info-label">Студия</div>
+          <div class="info-value">Москва, Кутузовский проспект 14, офис 502<br>Пн–Сб, 10:00 — 20:00</div>
+        </div>
+        <div class="info-block">
+          <div class="info-label">Реквизиты</div>
+          <div class="info-value">ООО «Поверхности Студио»<br>ИНН 7700000000<br>ОГРН 1147700000000</div>
+        </div>
+      </div>
+
+      <form class="contact-form" id="contact-form" novalidate>
+        <div class="form-row two-col">
+          <div>
+            <label for="f-name">Имя*</label>
+            <input type="text" id="f-name" name="name" required autocomplete="name">
+            <div class="form-error" data-error-for="name"></div>
+          </div>
+          <div>
+            <label for="f-phone">Телефон*</label>
+            <input type="tel" id="f-phone" name="phone" required placeholder="+7 999 000 00 00" autocomplete="tel">
+            <div class="form-error" data-error-for="phone"></div>
+          </div>
+        </div>
+
+        <div class="form-row two-col">
+          <div>
+            <label for="f-room">Тип помещения</label>
+            <select id="f-room" name="room">
+              <option value="living">Гостиная</option>
+              <option value="bedroom">Спальня</option>
+              <option value="kitchen">Кухня</option>
+              <option value="nursery">Детская</option>
+              <option value="office">Офис</option>
+              <option value="corridor">Коридор</option>
+              <option value="other">Другое</option>
+            </select>
+          </div>
+          <div>
+            <label for="f-area">Площадь, м²</label>
+            <input type="number" id="f-area" name="area" min="0" step="0.1">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label for="f-message">Комментарий</label>
+          <textarea id="f-message" name="message" placeholder="Опишите задачу, укажите тип обоев, сроки, особые пожелания..."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn primary">Отправить заявку<span class="arrow">→</span></button>
+          <button type="reset" class="btn">Очистить</button>
+        </div>
+        <div class="privacy">Нажимая «Отправить», вы соглашаетесь с обработкой персональных данных по политике конфиденциальности.</div>
+      </form>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer id="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo-big"><span class="dot"></span>ПОВЕРХНОСТИ</div>
+        <p>Студия премиальной поклейки обоев. Москва и область. Работаем с 2014 года. Гарантия пять лет на работу и материал.</p>
+      </div>
+      <div>
+        <h4>Навигация</h4>
+        <ul>
+          <li><a href="#vortex-section" data-scroll="#vortex-section">Работы</a></li>
+          <li><a href="#services" data-scroll="#services">Услуги</a></li>
+          <li><a href="#gallery" data-scroll="#gallery">Портфолио</a></li>
+          <li><a href="#process" data-scroll="#process">Процесс</a></li>
+          <li><a href="#calculator" data-scroll="#calculator">Калькулятор</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Услуги</h4>
+        <ul>
+          <li><a href="#services" data-scroll="#services">Флизелин</a></li>
+          <li><a href="#services" data-scroll="#services">Винил</a></li>
+          <li><a href="#services" data-scroll="#services">Фотообои</a></li>
+          <li><a href="#services" data-scroll="#services">Фрески</a></li>
+          <li><a href="#services" data-scroll="#services">Подготовка стен</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Контакты</h4>
+        <ul>
+          <li><a href="tel:+74950000000">+7 495 000 00 00</a></li>
+          <li><a href="mailto:hello@poverhnosti.studio">hello@poverhnosti.studio</a></li>
+          <li><a href="#contact" data-scroll="#contact">Москва, Кутузовский 14</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2014—2025 ПОВЕРХНОСТИ · Все права защищены</div>
+      <button class="back-top" data-scroll="#hero">Наверх ↑</button>
+    </div>
+  </div>
+</footer>
+
+<div id="lightbox">
+  <button class="close">Закрыть ✕</button>
+  <img src="" alt="">
+  <div class="lb-meta"></div>
+</div>
+
+<div id="toast-container"></div>
+
+<script type="module">
+import * as THREE from 'three';
+
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isTouch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+
+const gsap = window.gsap;
+const ScrollTrigger = window.ScrollTrigger;
+const Lenis = window.Lenis;
+
+if (gsap && ScrollTrigger) gsap.registerPlugin(ScrollTrigger);
+
+// ============= LENIS SMOOTH SCROLL =============
+let lenis = null;
+if (!prefersReducedMotion && Lenis) {
+  lenis = new Lenis({
+    duration: 1.1,
+    easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    smoothWheel: true,
+    wheelMultiplier: 1,
+  });
+  function raf(time) {
+    lenis.raf(time);
+    requestAnimationFrame(raf);
+  }
+  requestAnimationFrame(raf);
+  lenis.on('scroll', () => { if (ScrollTrigger) ScrollTrigger.update(); });
+}
+
+function smoothScrollTo(target) {
+  const el = document.querySelector(target);
+  if (!el) return;
+  if (lenis) lenis.scrollTo(el, { offset: -80, duration: 1.5 });
+  else el.scrollIntoView({ behavior: 'smooth' });
+}
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-scroll]');
+  if (t) {
+    e.preventDefault();
+    smoothScrollTo(t.getAttribute('data-scroll'));
+    return;
+  }
+  const link = e.target.closest('a[href^="#"]');
+  if (link) {
+    const href = link.getAttribute('href');
+    if (href && href.length > 1 && href !== '#') {
+      e.preventDefault();
+      smoothScrollTo(href);
+    }
+  }
+});
+
+// ============= CUSTOM CURSOR =============
+if (!isTouch) {
+  const cursor = document.getElementById('custom-cursor');
+  const target = { x: window.innerWidth/2, y: window.innerHeight/2 };
+  const pos = { x: target.x, y: target.y };
+
+  window.addEventListener('mousemove', e => {
+    target.x = e.clientX;
+    target.y = e.clientY;
+  });
+
+  document.addEventListener('mouseover', e => {
+    if (e.target.closest('a, button, input, select, textarea, [data-lightbox], .radio-card, .check-row')) {
+      cursor.classList.add('hover');
+    }
+  });
+  document.addEventListener('mouseout', e => {
+    if (e.target.closest('a, button, input, select, textarea, [data-lightbox], .radio-card, .check-row')) {
+      cursor.classList.remove('hover');
+    }
+  });
+
+  function cursorLoop() {
+    pos.x += (target.x - pos.x) * 0.18;
+    pos.y += (target.y - pos.y) * 0.18;
+    cursor.style.transform = `translate(${pos.x - 6}px, ${pos.y - 6}px)`;
+    requestAnimationFrame(cursorLoop);
+  }
+  cursorLoop();
+}
+
+// ============= HERO SCRAMBLE DECODE =============
+function scrambleDecode() {
+  const TARGET = 'ПОВЕРХНОСТИ·ПРЕМИУМ·ОБОИ';
+  const CHARS = '!<>-_\\/[]{}=+*^?#01АБВГДПОВЕРХНСТИМБУЛ';
+  const el = document.getElementById('hero-title');
+  if (!el) return;
+  let iter = 0;
+  const max = TARGET.length * 6;
+  el.classList.add('is-decoding');
+  function tick() {
+    el.textContent = TARGET.split('').map((ch, i) => {
+      if (ch === ' ' || ch === '·') return ch;
+      if (i < iter / 6) return TARGET[i];
+      return CHARS[Math.floor(Math.random() * CHARS.length)];
+    }).join('');
+    iter += 1;
+    if (iter >= max) {
+      el.textContent = TARGET;
+      el.classList.remove('is-decoding');
+      return;
+    }
+    setTimeout(tick, 35);
+  }
+  tick();
+}
+scrambleDecode();
+
+// ============= PARTICLE FIELD =============
+function initParticles() {
+  if (prefersReducedMotion) return;
+  const canvas = document.getElementById('particle-canvas');
+  if (!canvas) return;
+
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  } catch (e) { return; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 100);
+  camera.position.z = 10;
+
+  const COUNT = isTouch ? 500 : 1200;
+  const positions = new Float32Array(COUNT * 3);
+  const sizes = new Float32Array(COUNT);
+  const offsets = new Float32Array(COUNT);
+  const colors = new Float32Array(COUNT);
+
+  for (let i = 0; i < COUNT; i++) {
+    positions[i*3] = (Math.random() - 0.5) * 22;
+    positions[i*3+1] = (Math.random() - 0.5) * 14;
+    positions[i*3+2] = (Math.random() - 0.5) * 14;
+    sizes[i] = Math.random() * 1.6 + 0.4;
+    offsets[i] = Math.random() * Math.PI * 2;
+    const isAccent = Math.random() < 0.12;
+    if (isAccent) {
+      colors[i*3] = 0; colors[i*3+1] = 0.83; colors[i*3+2] = 1;
+    } else {
+      colors[i*3] = 1; colors[i*3+1] = 1; colors[i*3+2] = 1;
+    }
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+  geo.setAttribute('aOffset', new THREE.BufferAttribute(offsets, 1));
+  geo.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
+
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uMouse: { value: new THREE.Vector2(0, 0) }
+    },
+    vertexShader: `
+      attribute float aSize;
+      attribute float aOffset;
+      attribute vec3 aColor;
+      uniform float uTime;
+      uniform vec2 uMouse;
+      varying float vAlpha;
+      varying vec3 vColor;
+      void main() {
+        vec3 p = position;
+        p.y += sin(uTime * 0.3 + aOffset) * 0.4;
+        p.x += cos(uTime * 0.22 + aOffset * 0.7) * 0.3;
+        p.x += uMouse.x * 0.6;
+        p.y += uMouse.y * 0.4;
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_PointSize = aSize * (180.0 / -mv.z);
+        gl_Position = projectionMatrix * mv;
+        vAlpha = 0.45 + 0.55 * sin(uTime * 0.6 + aOffset);
+        vColor = aColor;
+      }
+    `,
+    fragmentShader: `
+      varying float vAlpha;
+      varying vec3 vColor;
+      void main() {
+        vec2 uv = gl_PointCoord - vec2(0.5);
+        float d = length(uv);
+        if (d > 0.5) discard;
+        float a = smoothstep(0.5, 0.0, d) * vAlpha * 0.55;
+        gl_FragColor = vec4(vColor, a);
+      }
+    `,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+
+  const points = new THREE.Points(geo, mat);
+  scene.add(points);
+
+  const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
+  window.addEventListener('mousemove', e => {
+    mouse.tx = (e.clientX / window.innerWidth - 0.5) * 0.3;
+    mouse.ty = (e.clientY / window.innerHeight - 0.5) * -0.2;
+  });
+
+  let active = true;
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => active = e.isIntersecting);
+  });
+  io.observe(canvas);
+
+  const clock = new THREE.Clock();
+  function render() {
+    if (active) {
+      const t = clock.getElapsedTime();
+      mat.uniforms.uTime.value = t;
+      mouse.x += (mouse.tx - mouse.x) * 0.05;
+      mouse.y += (mouse.ty - mouse.y) * 0.05;
+      mat.uniforms.uMouse.value.set(mouse.x, mouse.y);
+      renderer.render(scene, camera);
+    }
+    requestAnimationFrame(render);
+  }
+  render();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+}
+initParticles();
+
+// ============= VORTEX PHOTO WALL =============
+function initVortex() {
+  if (prefersReducedMotion) return;
+  const canvas = document.getElementById('vortex-canvas');
+  const section = document.getElementById('vortex-section');
+  if (!canvas || !section) return;
+
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  } catch (e) { return; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 100);
+  camera.position.set(0, 0, 0.3);
+  camera.lookAt(0, 0, -1);
+
+  function resize() {
+    const w = section.clientWidth;
+    const h = section.clientHeight;
+    renderer.setSize(w, h);
+    camera.aspect = w/h;
+    camera.updateProjectionMatrix();
+  }
+
+  const RADIUS = 5;
+  const TOTAL = 120;
+  const TURNS = 2.5;
+  const TOTAL_HEIGHT = 16;
+
+  const seeds = [
+    'wp-vortex-1', 'wp-vortex-2', 'wp-vortex-3', 'wp-vortex-4',
+    'wp-vortex-5', 'wp-vortex-6', 'wp-vortex-7', 'wp-vortex-8',
+    'wp-vortex-9', 'wp-vortex-10', 'wp-vortex-11', 'wp-vortex-12'
+  ];
+
+  const loader = new THREE.TextureLoader();
+  loader.crossOrigin = 'anonymous';
+  const textures = [];
+  let loaded = 0;
+
+  const group = new THREE.Group();
+  scene.add(group);
+  const planes = [];
+
+  function buildScene() {
+    if (textures.length === 0) return;
+    const planeGeo = new THREE.PlaneGeometry(1.4, 1.9);
+    const materials = textures.map(tex => new THREE.MeshBasicMaterial({
+      map: tex,
+      side: THREE.FrontSide,
+      transparent: true,
+      opacity: 0.9,
+    }));
+    const accentMat = new THREE.MeshBasicMaterial({
+      color: 0x00D4FF,
+      side: THREE.FrontSide,
+      transparent: true,
+      opacity: 0.15,
+    });
+
+    for (let i = 0; i < TOTAL; i++) {
+      const t = i / TOTAL;
+      const angle = t * Math.PI * 2 * TURNS;
+      const height = (t - 0.5) * TOTAL_HEIGHT;
+
+      const isAccent = i % 10 === 0;
+      const mat = isAccent ? accentMat : materials[i % materials.length];
+      const mesh = new THREE.Mesh(planeGeo, mat);
+      mesh.position.set(
+        Math.cos(angle) * RADIUS,
+        height,
+        Math.sin(angle) * RADIUS
+      );
+      mesh.lookAt(0, height, 0);
+      mesh.rotateY(Math.PI);
+      group.add(mesh);
+      planes.push({ mesh, isAccent, idx: i });
+    }
+    resize();
+  }
+
+  seeds.forEach(seed => {
+    loader.load(
+      `https://picsum.photos/seed/${seed}/400/560`,
+      tex => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        textures.push(tex);
+        loaded++;
+        if (loaded === seeds.length) { buildScene(); requestAnimationFrame(render); }
+      },
+      undefined,
+      () => {
+        loaded++;
+        if (loaded === seeds.length && textures.length > 0) { buildScene(); requestAnimationFrame(render); }
+      }
+    );
+  });
+
+  const state = { progress: 0, autoRotate: 0 };
+  if (ScrollTrigger) {
+    ScrollTrigger.create({
+      trigger: section,
+      start: 'top bottom',
+      end: 'bottom top',
+      scrub: 0.6,
+      onUpdate: self => { state.progress = self.progress; }
+    });
+  }
+
+  let active = false;
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => active = e.isIntersecting);
+  });
+  io.observe(section);
+
+  function render() {
+    if (active && planes.length > 0) {
+      state.autoRotate += 0.0012;
+      const scrollY = state.progress * 26 - 13;
+      const rotY = state.autoRotate + state.progress * Math.PI * 3;
+      group.rotation.y = rotY;
+      group.position.y = -scrollY;
+
+      const t = performance.now() * 0.001;
+      planes.forEach((p, i) => {
+        if (p.isAccent) {
+          p.mesh.material.opacity = 0.12 + Math.sin(t + i * 0.3) * 0.06;
+        }
+      });
+      renderer.render(scene, camera);
+    }
+    requestAnimationFrame(render);
+  }
+
+  resize();
+  window.addEventListener('resize', resize);
+}
+initVortex();
+
+// ============= MANIFESTO SCRUB BLUR =============
+function initManifesto() {
+  const el = document.getElementById('manifesto-text');
+  if (!el) return;
+  const original = el.textContent.trim();
+  const words = original.split(/\s+/);
+  el.innerHTML = words.map(w => `<span class="word">${w}</span>`).join(' ');
+
+  if (prefersReducedMotion) {
+    el.querySelectorAll('.word').forEach(w => {
+      w.style.opacity = 1;
+      w.style.filter = 'none';
+    });
+    return;
+  }
+
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      if (gsap && ScrollTrigger) {
+        gsap.timeline({
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 85%',
+            end: 'bottom 60%',
+            scrub: true,
+          }
+        }).fromTo('#manifesto-text .word',
+          { opacity: 0, filter: 'blur(12px) brightness(30%)' },
+          { opacity: 1, filter: 'blur(0px) brightness(100%)', stagger: 0.04, ease: 'sine.out' }
+        );
+      } else {
+        el.querySelectorAll('.word').forEach(w => {
+          w.style.transition = 'opacity 1s, filter 1s';
+          w.style.opacity = 1;
+          w.style.filter = 'none';
+        });
+      }
+    });
+  }
+}
+initManifesto();
+
+// ============= PARALLAX GALLERY =============
+function initParallaxGallery() {
+  if (prefersReducedMotion || !gsap || !ScrollTrigger) return;
+  const top = document.getElementById('parallax-top');
+  const bottom = document.getElementById('parallax-bottom');
+  if (!top || !bottom) return;
+  ScrollTrigger.create({
+    trigger: '#gallery',
+    start: 'top bottom',
+    end: 'bottom top',
+    scrub: 1,
+    onUpdate: self => {
+      const p = self.progress;
+      gsap.set(top, { x: -p * 320 });
+      gsap.set(bottom, { x: p * 320 - 150 });
+    }
+  });
+}
+initParallaxGallery();
+
+// ============= NAV ACTIVE STATE =============
+const navLinks = document.querySelectorAll('#topnav .nav-links a');
+const navSections = ['vortex-section','services','gallery','process','calculator','contact']
+  .map(id => document.getElementById(id)).filter(Boolean);
+
+if (ScrollTrigger) {
+  navSections.forEach(sec => {
+    ScrollTrigger.create({
+      trigger: sec,
+      start: 'top 40%',
+      end: 'bottom 40%',
+      onToggle: self => {
+        if (self.isActive) {
+          navLinks.forEach(l => {
+            l.classList.toggle('active', l.getAttribute('href') === '#' + sec.id);
+          });
+        }
+      }
+    });
+  });
+}
+
+// ============= CALCULATOR =============
+const PRICING = {
+  flizelin: { name: 'Флизелин', unit: 350 },
+  vinyl:    { name: 'Винил',    unit: 450 },
+  photo:    { name: 'Фотообои', unit: 800 },
+  freska:   { name: 'Фреска',   unit: 1200 },
+  silk:     { name: 'Текстиль', unit: 950 },
+};
+const SERVICES = {
+  prep:    { name: 'Подготовка стен',         unit: 200 },
+  demo:    { name: 'Демонтаж старых обоев',   unit: 100 },
+  ceiling: { name: 'Поклейка на потолок',     unit: 250 },
+};
+
+function formatRub(n) {
+  return new Intl.NumberFormat('ru-RU').format(Math.round(n)) + ' ₽';
+}
+
+function calculate() {
+  const wpInput = document.querySelector('input[name="wp-type"]:checked');
+  const area = parseFloat(document.getElementById('calc-area').value) || 0;
+  const prep = document.getElementById('calc-prep').checked;
+  const demo = document.getElementById('calc-demo').checked;
+  const ceiling = document.getElementById('calc-ceiling').checked;
+  const urgency = document.getElementById('calc-urgency').checked;
+
+  if (!wpInput) {
+    showToast('warn', 'Не выбран тип обоев', 'Укажите материал в калькуляторе');
+    return;
+  }
+  if (area <= 0) {
+    showToast('warn', 'Не указана площадь', 'Введите площадь стен в м²');
+    return;
+  }
+
+  const wp = PRICING[wpInput.value];
+  const wpCost = wp.unit * area;
+  const items = [{ key: wp.name + ' (поклейка)', val: wpCost }];
+
+  if (prep) items.push({ key: SERVICES.prep.name, val: SERVICES.prep.unit * area });
+  if (demo) items.push({ key: SERVICES.demo.name, val: SERVICES.demo.unit * area });
+  if (ceiling) items.push({ key: SERVICES.ceiling.name, val: SERVICES.ceiling.unit * area });
+
+  let total = items.reduce((s, i) => s + i.val, 0);
+  if (urgency) {
+    const urgencyCost = Math.round(total * 0.15);
+    items.push({ key: 'Срочный выезд (+15%)', val: urgencyCost });
+    total += urgencyCost;
+  }
+
+  renderResult(items, total, area, wp);
+}
+
+function renderResult(items, total, area, wp) {
+  const body = document.getElementById('result-body');
+  const rows = items.map(i => `
+    <div class="result-row">
+      <span class="key">${i.key}</span>
+      <span class="val">${formatRub(i.val)}</span>
+    </div>
+  `).join('');
+  body.innerHTML = `
+    ${rows}
+    <div class="result-total">
+      <span class="key">Итого</span>
+      <span class="val">${formatRub(total)}</span>
+    </div>
+    <button class="btn primary result-cta" id="result-order">Заказать с этой сметой<span class="arrow">→</span></button>
+  `;
+  const orderBtn = document.getElementById('result-order');
+  if (orderBtn) {
+    orderBtn.addEventListener('click', () => {
+      const areaField = document.getElementById('f-area');
+      if (areaField) areaField.value = area;
+      const msg = document.getElementById('f-message');
+      if (msg) msg.value = `Заявка из калькулятора. Тип: ${wp.name}, площадь: ${area} м², предварительная стоимость: ${formatRub(total)}.`;
+      smoothScrollTo('#contact');
+      showToast('success', 'Смета перенесена в форму', 'Заполните контакты и отправьте заявку');
+    });
+  }
+}
+
+function resetCalc() {
+  document.querySelectorAll('input[name="wp-type"]').forEach(r => r.checked = false);
+  document.getElementById('calc-area').value = '';
+  document.getElementById('calc-height').value = '';
+  ['calc-prep','calc-demo','calc-ceiling','calc-urgency'].forEach(id => {
+    document.getElementById(id).checked = false;
+  });
+  document.getElementById('result-body').innerHTML = '<div class="result-empty">Заполните параметры слева — здесь появится детализированная смета.</div>';
+}
+
+document.getElementById('calc-calculate').addEventListener('click', calculate);
+document.getElementById('calc-reset').addEventListener('click', resetCalc);
+
+// ============= CONTACT FORM =============
+function validatePhone(phone) {
+  const cleaned = phone.replace(/[\s\-()]/g, '');
+  return /^(\+7|8|7)?\d{10}$/.test(cleaned);
+}
+function showError(field, msg) {
+  const el = document.querySelector(`[data-error-for="${field}"]`);
+  if (el) el.textContent = msg;
+}
+function clearError(field) { showError(field, ''); }
+
+document.getElementById('contact-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const form = e.target;
+  const name = form.name.value.trim();
+  const phone = form.phone.value.trim();
+  let valid = true;
+
+  if (name.length < 2) { showError('name', 'Укажите имя (минимум 2 символа)'); valid = false; }
+  else clearError('name');
+
+  if (!validatePhone(phone)) { showError('phone', 'Укажите корректный телефон (10 цифр)'); valid = false; }
+  else clearError('phone');
+
+  if (!valid) {
+    showToast('error', 'Проверьте поля', 'Имя и телефон обязательны');
+    return;
+  }
+
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const original = submitBtn.innerHTML;
+  submitBtn.innerHTML = 'Отправляем...';
+  submitBtn.disabled = true;
+
+  setTimeout(() => {
+    showToast('success', 'Заявка принята', `Перезвоним в течение 2 часов, ${name}`);
+    form.reset();
+    submitBtn.innerHTML = original;
+    submitBtn.disabled = false;
+  }, 1200);
+});
+
+document.getElementById('f-name').addEventListener('input', e => {
+  if (e.target.value.trim().length >= 2) clearError('name');
+});
+document.getElementById('f-phone').addEventListener('input', e => {
+  if (validatePhone(e.target.value)) clearError('phone');
+});
+
+// ============= LIGHTBOX =============
+const lightbox = document.getElementById('lightbox');
+const lbImg = lightbox.querySelector('img');
+const lbMeta = lightbox.querySelector('.lb-meta');
+
+document.querySelectorAll('[data-lightbox]').forEach(item => {
+  item.addEventListener('click', () => {
+    const src = item.getAttribute('data-lightbox');
+    const meta = item.getAttribute('data-meta');
+    if (src) {
+      lbImg.src = src;
+      if (meta) lbMeta.textContent = meta;
+      lightbox.classList.add('open');
+    }
+  });
+});
+
+lightbox.querySelector('.close').addEventListener('click', () => lightbox.classList.remove('open'));
+lightbox.addEventListener('click', e => { if (e.target === lightbox) lightbox.classList.remove('open'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') lightbox.classList.remove('open'); });
+
+// ============= TOAST =============
+function showToast(type, title, body) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type === 'success' ? '' : type}`;
+  toast.innerHTML = `<div class="toast-title">${title}</div><div>${body}</div>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('out');
+    setTimeout(() => toast.remove(), 400);
+  }, 4500);
+}
+
+// ============= REFRESH SCROLLTRIGGER ON FONTS =============
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => {
+    if (ScrollTrigger) ScrollTrigger.refresh();
+  });
+}
+
+// Welcome toast
+setTimeout(() => {
+  showToast('success', 'Студия «Поверхности»', 'Прокрутите вниз, чтобы посмотреть работы');
+}, 1800);
+
+</script>
+</body>
+</html>
